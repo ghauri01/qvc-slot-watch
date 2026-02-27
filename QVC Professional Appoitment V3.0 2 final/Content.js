@@ -721,4 +721,12 @@ if (Notification.permission === 'default') {
   Notification.requestPermission();
 }
 
+// Listen for auto-start trigger from Playwright automation
+window.addEventListener('qvc-auto-start', () => {
+  console.log('QVC Pro Monitor: Auto-start triggered by automation');
+  if (!isMonitoring) {
+    startMonitoring();
+  }
+});
+
 console.log('QVC Pro Monitor loaded - Working Version v7.0');

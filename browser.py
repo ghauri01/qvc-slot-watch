@@ -344,37 +344,45 @@ def _click_submit(page: Page) -> None:
 
 
 def _select_qvc_center(page: Page) -> None:
-    """Select the QVC Center from the dropdown on the schedule page."""
-    for selector in [
-        "select[name*='center' i]",
-        "select[name*='location' i]",
-        "select[id*='center' i]",
-        "select[id*='location' i]",
-        "#LocationId",
-        "select",
-    ]:
-        try:
-            dropdown = page.locator(selector).first
-            if dropdown.is_visible(timeout=5_000):
-                # Try selecting by label (partial match)
-                try:
-                    dropdown.select_option(label=config.QVC_LOCATION)
-                    log.info("Selected QVC center: %s", config.QVC_LOCATION)
-                    time.sleep(3)
-                    return
-                except Exception:
-                    pass
-                # Try selecting by text content in options
-                options = dropdown.locator("option").all()
-                for opt in options:
-                    text = opt.inner_text(timeout=2_000).strip()
-                    if config.QVC_LOCATION.lower() in text.lower():
-                        dropdown.select_option(label=text)
-                        log.info("Selected QVC center: %s", text)
-                        time.sleep(3)
-                        return
-        except (PwTimeout, Exception):
-            continue
+    """Select the QVC Center from the custom dropdown on the calendar page.
+
+    The dropdown is: <button name="selectedVsc"> inside <div class="dropdown">,
+    with options in <ul class="dropdown-menu"> as <li> items.
+    """
+    log.info("Selecting QVC center: %s", config.QVC_LOCATION)
+
+    try:
+        # Click the dropdown button to reveal the options list
+        dropdown_btn = page.locator("button[name='selectedVsc']")
+        dropdown_btn.wait_for(state="visible", timeout=ACTION_TIMEOUT)
+        dropdown_btn.click()
+        time.sleep(1)
+
+        # Click the matching option inside the dropdown menu
+        # Use the <ul> sibling of the button to avoid matching banner text
+        option = page.locator(
+            "button[name='selectedVsc'] ~ ul.dropdown-menu li",
+            has_text=config.QVC_LOCATION,
+        ).first
+        option.wait_for(state="visible", timeout=5_000)
+        option.click()
+        time.sleep(3)
+        log.info("Selected QVC center: %s", config.QVC_LOCATION)
+        return
+    except (PwTimeout, Exception) as e:
+        log.warning("Primary dropdown approach failed: %s", e)
+
+    # Fallback: click anything with "Select Center" text, then pick from revealed list
+    try:
+        page.locator("button:has-text('Select Center')").first.click()
+        time.sleep(1)
+        page.locator("ul.dropdown-menu li", has_text=config.QVC_LOCATION).last.click()
+        time.sleep(3)
+        log.info("Selected QVC center (fallback): %s", config.QVC_LOCATION)
+        return
+    except (PwTimeout, Exception) as e:
+        log.warning("Fallback dropdown approach failed: %s", e)
+
     log.warning("Could not find or select QVC center dropdown")
 
 
@@ -560,6 +568,9 @@ def _launch_browser(pw):
             user_agent=ua,
             viewport={"width": 1280, "height": 800},
         )
+        # Auto-grant notification permission so the "Allow" bar never appears
+        context.grant_permissions(["notifications"])
+        log.info("Notification permission granted automatically")
         page = context.pages[0] if context.pages else context.new_page()
         return context, page, True
     else:
@@ -575,6 +586,19 @@ def _launch_browser(pw):
         )
         page = context.new_page()
         return browser, page, False
+
+
+def _start_extension_monitor(page: Page) -> None:
+    """Trigger the browser extension to start monitoring on the calendar page."""
+    if not config.EXTENSION_PATH or not os.path.isdir(config.EXTENSION_PATH):
+        return
+    log.info("Triggering extension auto-start on calendar page")
+    try:
+        page.evaluate("window.dispatchEvent(new CustomEvent('qvc-auto-start'))")
+        time.sleep(2)
+        log.info("Extension monitoring started via auto-start trigger")
+    except Exception as e:
+        log.warning("Could not trigger extension auto-start: %s", e)
 
 
 def check_appointments() -> list[dict]:
@@ -619,6 +643,9 @@ def check_appointments() -> list[dict]:
             _dismiss_notification_modal(page)
             slots = _scrape_calendar(page)
             log.info("Found %d available slot(s)", len(slots))
+
+            # Step 9.5: Auto-start the browser extension monitor
+            _start_extension_monitor(page)
 
             # Step 10: Stay on calendar page for configured duration
             wait_minutes = config.CALENDAR_WAIT_MINUTES
