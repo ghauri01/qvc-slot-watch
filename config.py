@@ -32,6 +32,12 @@ CHECK_INTERVAL_MINUTES = int(_get("CHECK_INTERVAL_MINUTES", "10"))
 HEADLESS = _get("HEADLESS", "false").lower() in ("true", "1", "yes")
 LOG_LEVEL = _get("LOG_LEVEL", "INFO").upper()
 
+# Browser extension (path to unpacked extension folder)
+EXTENSION_PATH = _get("EXTENSION_PATH", "")
+
+# How long to keep the browser open on the calendar page (minutes)
+CALENDAR_WAIT_MINUTES = int(_get("CALENDAR_WAIT_MINUTES", "10"))
+
 # Required fields validation
 _REQUIRED = {
     "PASSPORT_NUMBER": PASSPORT_NUMBER,
