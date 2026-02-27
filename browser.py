@@ -529,24 +529,60 @@ def _scrape_calendar(page: Page) -> list[dict]:
     return unique
 
 
+def _launch_browser(pw):
+    """Launch browser with optional extension support.
+
+    When EXTENSION_PATH is set, uses a persistent context (required for extensions).
+    Otherwise, uses the standard launch + new_context approach.
+
+    Returns (context_or_browser, page, is_persistent).
+    """
+    chrome_args = ["--disable-blink-features=AutomationControlled"]
+    ext_path = config.EXTENSION_PATH
+
+    ua = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    )
+
+    if ext_path and os.path.isdir(ext_path):
+        # Persistent context is required to load Chrome extensions
+        log.info("Loading extension from: %s", ext_path)
+        chrome_args += [
+            f"--disable-extensions-except={ext_path}",
+            f"--load-extension={ext_path}",
+        ]
+        context = pw.chromium.launch_persistent_context(
+            user_data_dir="",  # empty string = temp profile
+            headless=False,    # extensions don't work in headless mode
+            args=chrome_args,
+            user_agent=ua,
+            viewport={"width": 1280, "height": 800},
+        )
+        page = context.pages[0] if context.pages else context.new_page()
+        return context, page, True
+    else:
+        if ext_path:
+            log.warning("EXTENSION_PATH '%s' not found — launching without extension", ext_path)
+        browser = pw.chromium.launch(
+            headless=config.HEADLESS,
+            args=chrome_args,
+        )
+        context = browser.new_context(
+            user_agent=ua,
+            viewport={"width": 1280, "height": 800},
+        )
+        page = context.new_page()
+        return browser, page, False
+
+
 def check_appointments() -> list[dict]:
     """Run the full booking flow and return available appointment slots."""
     log.info("Starting appointment check (headless=%s)", config.HEADLESS)
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(
-            headless=config.HEADLESS,
-            args=["--disable-blink-features=AutomationControlled"],
-        )
-        context = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-            viewport={"width": 1280, "height": 800},
-        )
-        page = context.new_page()
+        handle, page, is_persistent = _launch_browser(pw)
         page.set_default_timeout(ACTION_TIMEOUT)
 
         try:
@@ -583,6 +619,19 @@ def check_appointments() -> list[dict]:
             _dismiss_notification_modal(page)
             slots = _scrape_calendar(page)
             log.info("Found %d available slot(s)", len(slots))
+
+            # Step 10: Stay on calendar page for configured duration
+            wait_minutes = config.CALENDAR_WAIT_MINUTES
+            if wait_minutes > 0:
+                log.info("Keeping browser open on calendar page for %d minutes...", wait_minutes)
+                page.screenshot(path="logs/calendar_staying_open.png")
+                for remaining in range(wait_minutes * 60, 0, -1):
+                    time.sleep(1)
+                    # Log every minute
+                    if remaining % 60 == 0:
+                        log.info("  %d minute(s) remaining on calendar page", remaining // 60)
+                log.info("Wait complete — closing browser")
+
             return slots
 
         except Exception:
@@ -595,4 +644,4 @@ def check_appointments() -> list[dict]:
             return []
 
         finally:
-            browser.close()
+            handle.close()

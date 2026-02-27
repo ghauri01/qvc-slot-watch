@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+
+    body {
+      width: 380px;
+      background: linear-gradient(145deg, #1e1e2f 0%, #2d2d3a 100%);
+      color: #ffffff;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+
+    .title h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .version {
+      font-size: 11px;
+      color: #a0aec0;
+      letter-spacing: 0.5px;
+    }
+
+    /* Status Card */
+    .status-card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .status-header span {
+      font-size: 14px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .status-badge {
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.idle {
+      background: #f59e0b20;
+      color: #f59e0b;
+      border: 1px solid #f59e0b40;
+    }
+
+    .status-badge.monitoring {
+      background: #10b98120;
+      color: #10b981;
+      border: 1px solid #10b98140;
+      animation: pulse 2s infinite;
+    }
+
+    .status-badge.found {
+      background: #ef444420;
+      color: #ef4444;
+      border: 1px solid #ef444440;
+      animation: pulse 1s infinite;
+    }
+
+    .status-message {
+      font-size: 15px;
+      margin-bottom: 20px;
+      color: #e0e0e0;
+      line-height: 1.5;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-item {
+      background: rgba(0,0,0,0.2);
+      border-radius: 16px;
+      padding: 15px 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Control Buttons */
+    .control-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+      color: white;
+      box-shadow: 0 8px 16px rgba(75, 85, 99, 0.3);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      background: rgba(0,0,0,0.2);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .settings-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .setting-info {
+      flex: 1;
+    }
+
+    .setting-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .setting-desc {
+      font-size: 11px;
+      color: #a0aec0;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      width: 46px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 30px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-switch.active {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch.active::after {
+      left: 24px;
+    }
+
+    /* Email Container */
+    .email-container {
+      margin-top: 12px;
+    }
+
+    .email-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .email-input {
+      flex: 1;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+    }
+
+    .email-input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .email-input::placeholder {
+      color: #a0aec0;
+    }
+
+    .remove-email {
+      background: #ef4444;
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remove-email:hover {
+      background: #dc2626;
+    }
+
+    .add-email-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px dashed rgba(255,255,255,0.3);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 12px;
+      margin-top: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .add-email-btn:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    /* Session Info */
+    .session-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 20px;
+      font-size: 11px;
+    }
+
+    .session-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    .session-timer {
+      color: #a0aec0;
+      margin-left: auto;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 10px;
+      color: #a0aec0;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">🇶🇦</div>
+      <div class="title">
+        <h1>QVC Pro Monitor</h1>
+        <div class="version">Professional Edition v2.0.0</div>
+      </div>
+    </div>
+
+    <!-- Status Card -->
+    <div class="status-card">
+      <div class="status-header">
+        <span>System Status</span>
+        <span class="status-badge idle" id="statusBadge">IDLE</span>
+      </div>
+      <div class="status-message" id="statusMessage">
+        Ready to start monitoring for appointments
+      </div>
+      
+      <!-- Session Info -->
+      <div class="session-info">
+        <span class="session-dot"></span>
+        <span>Session Active</span>
+        <span class="session-timer" id="sessionTimer">00:00</span>
+      </div>
+      
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="checkCount">0</div>
+          <div class="stat-label">Scans</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="foundCount">0</div>
+          <div class="stat-label">Found</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="uptime">00:00</div>
+          <div class="stat-label">Uptime</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="control-buttons">
+      <button class="btn btn-primary" id="startBtn">
+        <span>▶</span> START
+      </button>
+      <button class="btn btn-danger" id="stopBtn" disabled>
+        <span>■</span> STOP
+      </button>
+      <button class="btn btn-secondary" id="panelBtn">
+        <span>📊</span> LOGS
+      </button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel">
+      <div class="settings-title">
+        <span>⚙️</span> Alert Configuration
+      </div>
+
+      <!-- Sound Alert -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Sound Alert</div>
+          <div class="setting-desc">Loud alarm when appointment found</div>
+        </div>
+        <div class="toggle-switch active" id="soundToggle"></div>
+      </div>
+
+      <!-- Desktop Notification -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Desktop Notification</div>
+          <div class="setting-desc">Popup alerts on your screen</div>
+        </div>
+        <div class="toggle-switch active" id="notifyToggle"></div>
+      </div>
+
+      <!-- Auto Scroll -->
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Auto Scroll</div>
+          <div class="setting-desc">Scroll to available dates</div>
+        </div>
+        <div class="toggle-switch active" id="scrollToggle"></div>
+      </div>
+
+      <!-- Email Alerts -->
+      <div class="setting-row" style="flex-direction: column; align-items: stretch;">
+        <div class="setting-info" style="margin-bottom: 8px;">
+          <div class="setting-name">Email Alerts</div>
+          <div class="setting-desc">Send notifications to multiple emails</div>
+        </div>
+        <div class="email-container" id="emailContainer"></div>
+        <button class="add-email-btn" id="addEmailBtn">+ Add Another Email</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Qatar Visa Center • Professional Appointment Monitor
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
